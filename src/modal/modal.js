@@ -106,9 +106,31 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
     }
   }])
 
+/**
+ * A helper, for measuring and maintaining scrollbar properties - used by modalWindow and $modalStack
+ */
+  .factory('$$scrollbarHelper', function () {
+    var scrollbarWidth;
+
+    return {
+      measureScrollbar: measureScrollbar,
+      scrollbarWidth: scrollbarWidth
+    };
+
+    // from modal.js of bootstrap
+    function measureScrollbar () { // thx walsh
+      var scrollDiv = document.createElement('div');
+      scrollDiv.className = 'modal-scrollbar-measure';
+      document.body.appendChild(scrollDiv);
+      var width = scrollDiv.offsetWidth - scrollDiv.clientWidth;
+      document.body.removeChild(scrollDiv);
+      this.scrollbarWidth = width;
+    }
+  })
+
   .directive('uibModalWindow', [
-           '$uibModalStack', '$q', '$animate', '$injector',
-  function($modalStack ,  $q ,  $animate,   $injector) {
+           '$uibModalStack', '$q', '$animate', '$injector', '$$scrollbarHelper',
+  function($modalStack ,  $q ,  $animate,   $injector, $$scrollbarHelper) {
     var $animateCss = null;
 
     if ($injector.has('$animateCss')) {
@@ -128,6 +150,33 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
         element.addClass(attrs.windowClass || '');
         element.addClass(attrs.windowTopClass || '');
         scope.size = attrs.size;
+
+        // get topmost modal object
+        var bodyIsOverflowing;
+        var modal = $modalStack.getTop();
+        
+        // only when modal is attached to body
+        if(modal && modal.value && modal.value.appendTo === 'body'){
+          
+          // check bodyOverflowing property that was set when opening modal
+          if(modal.value.modalDomEl && modal.value.modalDomEl.bodyOverflowing){
+            bodyIsOverflowing = true;
+          }
+
+          // start - from adjustDialog method of modal.js of bootstrap
+          // check if modal is overflowing
+          var modalIsOverflowing = element[0].scrollHeight > document.documentElement.clientHeight;
+          
+          if(!$$scrollbarHelper.scrollbarWidth){
+            $$scrollbarHelper.measureScrollbar();
+          }
+
+          element.css({
+            'padding-left': (!bodyIsOverflowing && modalIsOverflowing ? $$scrollbarHelper.scrollbarWidth : '') + 'px',
+            'padding-right': (bodyIsOverflowing && !modalIsOverflowing ? $$scrollbarHelper.scrollbarWidth : '') + 'px'
+          });
+          // end - from adjustDialog method of modal.js of bootstrap
+        }
 
         scope.close = function(evt) {
           var modal = $modalStack.getTop();
@@ -235,11 +284,13 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
              '$injector',
              '$$multiMap',
              '$$stackedMap',
+             '$$scrollbarHelper',
     function($animate ,  $timeout ,  $document ,  $compile ,  $rootScope ,
               $q,
               $injector,
               $$multiMap,
-              $$stackedMap) {
+              $$stackedMap,
+              $$scrollbarHelper) {
       var $animateCss = null;
 
       if ($injector.has('$animateCss')) {
@@ -291,6 +342,13 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
           openedClasses.remove(modalBodyClass, modalInstance);
           appendToElement.toggleClass(modalBodyClass, openedClasses.hasKey(modalBodyClass));
           toggleTopWindowClass(true);
+
+          // reset any right padding set to body when opening the modal
+          // make sure no other modal is open before resetting
+          if(modalWindow.appendTo === 'body' && openedWindows.length() === 0){
+            var body = $document.find('body').eq(0);
+            body.css('padding-right', modalWindow.modalDomEl.originalBodyRightPadding);
+          }
         });
         checkRemoveBackdrop();
 
@@ -462,6 +520,25 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
         openedWindows.top().value.modalOpener = modalOpener;
         appendToElement.append(modalDomEl);
         appendToElement.addClass(modalBodyClass);
+
+        // if modal is attached to body, then check if body is overflowing and set bodyOverflowing property on modal object and set right padding equal to scrollbarWidth
+        if (modal.appendTo === 'body' && document.body.scrollHeight > document.documentElement.clientHeight){
+
+          // set bodyOverflowing property
+          modalDomEl.bodyOverflowing = true;
+
+          // set right padding to body
+          if(openedWindows.length() === 1){
+            if(!$$scrollbarHelper.scrollbarWidth){
+              $$scrollbarHelper.measureScrollbar();
+            }
+
+            var body = $document.find('body').eq(0);
+            // set originalBodyRightPadding property to reset it when the last modal closes
+            modalDomEl.originalBodyRightPadding = body.css('padding-right');
+            body.css('padding-right', ($$scrollbarHelper.scrollbarWidth + parseInt(modalDomEl.originalBodyRightPadding || '0'))+'px');
+          }
+        }
 
         $modalStack.clearFocusListCache();
       };

@@ -1225,4 +1225,56 @@ describe('$uibModal', function () {
       expect(called).toBeTruthy();
     });
   });
+
+  describe('body content when vertical scrollbar present', function() {
+    it('should not shift document elements - no body right padding specified', function() {
+
+      var largeBlockWithButton = '<div class="container"><button class="btn btn-default" id="clickMeButton" ng-click="open()">Open me!</button><div style="height: 3000px;"><p>&nbsp;</p><p>Block with large height to force vertical scroll</p></div></div></div>';
+      var element = angular.element(largeBlockWithButton);
+      angular.element(document.body).append(element);
+
+      var clickMeButton = $document.find('div #clickMeButton');
+      var buttonLeftBeforeModalOpen = clickMeButton.offset().left;
+
+      var modal = open({template: '<div>Content</div>'});
+      expect($document).toHaveModalsOpen(1);
+      var buttonLeftAfterModalOpen = clickMeButton.offset().left;
+      expect(buttonLeftAfterModalOpen).toBe(buttonLeftBeforeModalOpen);
+
+      dismiss(modal, 'closing in test');
+
+      expect($document).toHaveModalsOpen(0);
+      var buttonLeftAfterModalClose = clickMeButton.offset().left;
+      expect(buttonLeftAfterModalClose).toBe(buttonLeftBeforeModalOpen);
+
+      element.remove();
+    });
+
+    it('should not shift document elements - body has right padding specified', function() {
+
+      // add right body padding
+      var body = $document.find('body').eq(0);
+      body.css('padding-right', '50px');
+
+      var largeBlockWithButton = '<div class="container"><button class="btn btn-default" id="clickMeButton" ng-click="open()">Open me!</button><div style="height: 3000px;"><p>&nbsp;</p><p>Block with large height to force vertical scroll</p></div></div></div>';
+      var element = angular.element(largeBlockWithButton);
+      angular.element(document.body).append(element);
+
+      var clickMeButton = $document.find('div #clickMeButton');
+      var buttonLeftBeforeModalOpen = clickMeButton.offset().left;
+
+      var modal = open({template: '<div>Content</div>'});
+      expect($document).toHaveModalsOpen(1);
+      var buttonLeftAfterModalOpen = clickMeButton.offset().left;
+      expect(buttonLeftAfterModalOpen).toBe(buttonLeftBeforeModalOpen);
+
+      dismiss(modal, 'closing in test');
+
+      expect($document).toHaveModalsOpen(0);
+      var buttonLeftAfterModalClose = clickMeButton.offset().left;
+      expect(buttonLeftAfterModalClose).toBe(buttonLeftBeforeModalOpen);
+
+      element.remove();
+    });
+  });
 });

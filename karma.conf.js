@@ -19,6 +19,7 @@ module.exports = function(config) {
       'node_modules/angular/angular.js',
       'node_modules/angular-mocks/angular-mocks.js',
       'node_modules/angular-sanitize/angular-sanitize.js',
+      'node_modules/bootstrap/dist/css/bootstrap.css',
       'misc/test-lib/helpers.js',
       'src/**/*.js',
       'template/**/*.js'
