@@ -151,33 +151,6 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
         element.addClass(attrs.windowTopClass || '');
         scope.size = attrs.size;
 
-        // get topmost modal object
-        var bodyIsOverflowing;
-        var modal = $modalStack.getTop();
-        
-        // only when modal is attached to body
-        if(modal && modal.value && modal.value.appendTo === 'body'){
-          
-          // check bodyOverflowing property that was set when opening modal
-          if(modal.value.modalDomEl && modal.value.modalDomEl.bodyOverflowing){
-            bodyIsOverflowing = true;
-          }
-
-          // start - from adjustDialog method of modal.js of bootstrap
-          // check if modal is overflowing
-          var modalIsOverflowing = element[0].scrollHeight > document.documentElement.clientHeight;
-          
-          if(!$$scrollbarHelper.scrollbarWidth){
-            $$scrollbarHelper.measureScrollbar();
-          }
-
-          element.css({
-            'padding-left': (!bodyIsOverflowing && modalIsOverflowing ? $$scrollbarHelper.scrollbarWidth : '') + 'px',
-            'padding-right': (bodyIsOverflowing && !modalIsOverflowing ? $$scrollbarHelper.scrollbarWidth : '') + 'px'
-          });
-          // end - from adjustDialog method of modal.js of bootstrap
-        }
-
         scope.close = function(evt) {
           var modal = $modalStack.getTop();
           if (modal && modal.value.backdrop && modal.value.backdrop !== 'static' && (evt.target === evt.currentTarget)) {
@@ -251,6 +224,34 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
           var modal = $modalStack.getTop();
           if (modal) {
             $modalStack.modalRendered(modal.key);
+
+            // get topmost modal object
+            var bodyIsOverflowing;
+            var modalIsOverflowing;
+            
+            // only when modal is attached to body
+            if(modal.value.appendTo === 'body'){
+              
+              // check bodyOverflowing property that was set when opening modal
+              if(modal.value.modalDomEl.bodyOverflowing){
+                bodyIsOverflowing = true;
+              }
+
+              // start - from adjustDialog method of modal.js of bootstrap
+              // check if modal is overflowing
+              modalIsOverflowing = element[0].scrollHeight > document.documentElement.clientHeight;
+              
+              if(!$$scrollbarHelper.scrollbarWidth){
+                $$scrollbarHelper.measureScrollbar();
+              }
+
+              if(modalIsOverflowing && !bodyIsOverflowing){
+                element.css('padding-left', $$scrollbarHelper.scrollbarWidth + 'px');
+              }else if(bodyIsOverflowing && !modalIsOverflowing){
+                element.css('padding-right', $$scrollbarHelper.scrollbarWidth + 'px');
+              }
+              // end - from adjustDialog method of modal.js of bootstrap
+            }
           }
         });
       }
