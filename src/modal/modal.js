@@ -346,7 +346,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
           // reset any right padding set to body when opening the modal
           // make sure no other modal is open before resetting
           if(modalWindow.appendTo === 'body' && openedWindows.length() === 0){
-            var body = $document.find('body').eq(0);
+            var body = $document.find('body');
             body.css('padding-right', modalWindow.modalDomEl.originalBodyRightPadding);
           }
         });
@@ -533,7 +533,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
               $$scrollbarHelper.measureScrollbar();
             }
 
-            var body = $document.find('body').eq(0);
+            var body = $document.find('body');
             // set originalBodyRightPadding property to reset it when the last modal closes
             modalDomEl.originalBodyRightPadding = body.css('padding-right');
             body.css('padding-right', ($$scrollbarHelper.scrollbarWidth + parseInt(modalDomEl.originalBodyRightPadding || '0'))+'px');
